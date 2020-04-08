@@ -7,27 +7,29 @@ Created on Wed Mar 18 22:30:22 2020
 import random 
 import math
 import numpy as np
+import parameters as param
 
-# Paramètre représentant l'influence de la fatigue
-delta = 0.3
+#Paramètre représentant l'influence de la fatigue
+delta = param.delta
 
-# Importance accordée à chacun des deux critères
-nu = [0.5,0.5]
+#Importance accordée à chacun des deux critères
+nu = param.nu
 
+#Cas d'étude
+cas = param.nb_case
+
+#Création des 4 types de produits
 class Product : 
     def __init__(self, number, path, duration):
         self.number = number
         self.path = path 
         self.duration = duration 
         
-        
-Product1 = Product(1, [1,2,3,4,8], [[14,17], [5,8], [28,32], [2,4], None, None, None, [30,37]])
-Product2 = Product(2, [2,4,7], [None, [10,13], None, [20,25], None, None, [6,8], None ])
-Product3 = Product(3, [3,5,1], [[25,28], None, [5,10], None, [10,14], None, None, None])
-Product4 = Product(4, [5,6,7,8], [None, None, None, None, [5,9], [12,15], [30,34], [3,7]])
+Products = []
+for i in range(1,5):
+    Products.append(Product(i, param.path[i-1], param.duration[i-1]))
 
-Products = [Product1, Product2, Product3, Product4]
-
+#Création des 4 travailleurs
 class Worker :
     def __init__(self, number,  Skills): 
         self.number = number 
@@ -37,14 +39,11 @@ class Worker :
     def increase_fatigue(self, new_fatigue_level): 
         self.fatigue = new_fatigue_level
     
-Worker1 = Worker(1, [1, 0, 1, 0, 0, 1, 0, 0])
-Worker2 = Worker(2, [0, 1, 0, 0, 1, 0, 1, 1])
-Worker3 = Worker(3, [0, 1, 0, 1, 1, 0, 0, 1])
-Worker4 = Worker(4, [1, 0, 1, 1, 0, 1, 1, 0])
+Workers = []
+for i in range(1,5):
+    Workers.append(Worker(i, param.skill_matrix[cas-1][i-1]))
 
-Workers = [Worker1, Worker2, Worker3, Worker4]
-
-
+#Création des 8 machines
 class Machine : 
     def __init__(self, number, penibility):
         self.number = number
@@ -52,17 +51,11 @@ class Machine :
         self.occupation = 0
         self.penibility = penibility
         
-Machine1 = Machine(1, 0.8)
-Machine2 = Machine(2, 0.5)
-Machine3 = Machine(3, 0.1)
-Machine4 = Machine(4, 0.3)
-Machine5 = Machine(5, 0.2)
-Machine6 = Machine(6, 0.7)
-Machine7 = Machine(7, 0.1)
-Machine8 = Machine(8, 0.5)
+Machines = []
+for i in range(1,9):
+    Machines.append(Machine(i, param.penibility[i-1]))
 
-Machines = [Machine1, Machine2, Machine3, Machine4, Machine5, Machine6, Machine7, Machine8]
-
+#Création des types d'évènements
 class Event : 
     def __init__(self, time) :
         self.time = time 
@@ -92,34 +85,37 @@ Waiting_workers = []
 
 
 def next_event(Events):
-    next_event = Events.pop(0) # on récupère le prochain évènement
-    
-    if  isinstance(next_event, Product_arrival): 
-        num_prod = next_event.number #on récupère le numéro du produit
-        product = Products[num_prod - 1]
-        num_machine = product.path[0] #on détermine la 1ere machine où doit passer le produit
-        machine = Machines[num_machine -1]
-        if not machine.queue == 0 : #on regarde si la liste est vide
-            machine.queue.append(product)
-            print( str(next_event.time) + ' : ' + 'Product ' + str(num_prod) +  ' arrives at machine ' + str(num_machine) )
-            return worker_affectation_bis(next_event.time)  #on lance l'affectation d'employés
+    try:
+        next_event = Events.pop(0) # on récupère le prochain évènement
+        
+        if  isinstance(next_event, Product_arrival): 
+            num_prod = next_event.number #on récupère le numéro du produit
+            product = Products[num_prod - 1]
+            num_machine = product.path[0] #on détermine la 1ere machine où doit passer le produit
+            machine = Machines[num_machine -1]
+            if not machine.queue == 0 : #on regarde si la liste est vide
+                machine.queue.append(product)
+                print( str(next_event.time) + ' : ' + 'Product ' + str(num_prod) +  ' arrives at machine ' + str(num_machine) )
+                return worker_affectation_bis(next_event.time)  #on lance l'affectation d'employés
+                
+        if isinstance(next_event, Liberation): 
+            #par la suite créer une fonction libération
+            machine_num = next_event.machine_num
+            machine = Machines[machine_num - 1] #faire fonction get_machine
+            machine.occupation = 0 # on libère la machine
+            print (str(next_event.time) + ' : ' + 'Machine ' + str(machine_num) + ' is liberated by worker ' + str(next_event.worker_num))
+            #on pourra songer à indiquer dans occupied le worker qui travaille sur la machine 0 (vide , 1 ,2,3,4  ), idem pour les machines
+            if next_event.product.path.index(machine_num) +1 != len(next_event.product.path):# est ce que le produit doit passer par d'autres machines
+                next_machine_number = next_event.product.path[ next_event.product.path.index(machine_num) + 1 ] #on identifie ou la machine actuelle se situe dans le chemin puis on détermine la prochaine 
+                Machines[next_machine_number -1].queue.append(next_event.product) # on envoie le produit dans la file d'attente de la prochaine machine
+                print( str(next_event.time) + ' : ' + 'Product ' + str(next_event.product.number) +  ' is sent to machine ' + str(next_machine_number) ) 
             
-    if isinstance(next_event, Liberation): 
-        #par la suite créer une fonction libération
-        machine_num = next_event.machine_num
-        machine = Machines[machine_num - 1] #faire fonction get_machine
-        machine.occupation = 0 # on libère la machine
-        print (str(next_event.time) + ' : ' + 'Machine ' + str(machine_num) + ' is liberated by worker ' + str(next_event.worker_num))
-        #on pourra songer à indiquer dans occupied le worker qui travaille sur la machine 0 (vide , 1 ,2,3,4  ), idem pour les machines
-        if next_event.product.path.index(machine_num) +1 != len(next_event.product.path):# est ce que le produit doit passer par d'autres machines
-            next_machine_number = next_event.product.path[ next_event.product.path.index(machine_num) + 1 ] #on identifie ou la machine actuelle se situe dans le chemin puis on détermine la prochaine 
-            Machines[next_machine_number -1].queue.append(next_event.product) # on envoie le produit dans la file d'attente de la prochaine machine
-            print( str(next_event.time) + ' : ' + 'Product ' + str(next_event.product.number) +  ' is sent to machine ' + str(next_machine_number) ) 
-        
-        Waiting_workers.append(Workers[next_event.worker_num - 1]) #on ajoute le travailleurs à la file de travailleurs libres
-        
-        
-        return worker_affectation_bis(next_event.time)
+            Waiting_workers.append(Workers[next_event.worker_num - 1]) #on ajoute le travailleurs à la file de travailleurs libres
+            
+            
+            return worker_affectation_bis(next_event.time)
+    except:
+        pass
   
 
       
@@ -298,7 +294,7 @@ def update_fatigue(worker,duration, penibility):
 
  
  #Test : 
-Waiting_workers = [Worker1, Worker2, Worker3, Worker4]
+Waiting_workers = Workers
 Events.append(Product_arrival(0,1))
 next_event(Events)
 next_event(Events)
