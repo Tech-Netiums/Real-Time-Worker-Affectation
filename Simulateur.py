@@ -91,25 +91,30 @@ def next_event(Events):
     next_event = Events.pop(0) # on récupère le prochain évènement
     
     if  isinstance(next_event, Product_arrival): 
-        num_prod = Product_arrival.number #on récupère le numéro du produit
+        num_prod = next_event.number #on récupère le numéro du produit
         product = Products[num_prod - 1]
         num_machine = product.path[0] #on détermine la 1ere machine où doit passer le produit
         machine = Machines[num_machine -1]
         if not machine.queue == 0 : #on regarde si la liste est vide
             machine.queue.append(product)
+            print( str(next_event.time) + ' : ' + 'Product ' + str(num_prod) +  ' arrives at machine ' + str(num_machine) )
             return worker_affectation(next_event.time)  #on lance l'affectation d'employés
             
     if isinstance(next_event, Liberation): 
         #par la suite créer une fonction libération
         machine_num = next_event.machine_num
-        machine = Machines[machine_num -1] #faire fonction get_machine
+        machine = Machines[machine_num - 1] #faire fonction get_machine
         machine.occupation = 0 # on libère la machine
+        print (str(next_event.time) + ' : ' + 'Machine ' + str(machine_num) + ' is liberated by worker ' + str(next_event.worker_num))
         #on pourra songer à indiquer dans occupied le worker qui travaille sur la machine 0 (vide , 1 ,2,3,4  ), idem pour les machines
-        if next_event.product.path.index(machine_num) != len(next_event.product.path):# est ce que le produit doit passer par d'autres machines
+        if next_event.product.path.index(machine_num) +1 != len(next_event.product.path):# est ce que le produit doit passer par d'autres machines
             next_machine_number = next_event.product.path[ next_event.product.path.index(machine_num) + 1 ] #on identifie ou la machine actuelle se situe dans le chemin puis on détermine la prochaine 
             Machines[next_machine_number -1].queue.append(next_event.product) # on envoie le produit dans la file d'attente de la prochaine machine
+            print( str(next_event.time) + ' : ' + 'Product ' + str(next_event.product.number) +  ' is sent to machine ' + str(next_machine_number) ) 
         
         Waiting_workers.append(Workers[next_event.worker_num - 1]) #on ajoute le travailleurs à la file de travailleurs libres
+        
+        
         return worker_affectation(next_event.time)
   
 
@@ -118,7 +123,6 @@ def next_event(Events):
 
 def worker_affectation(time) :
     worker_index = 0
-    machine_index = 0
     for worker in Waiting_workers :  # on essaie d'affecter chacun des travailleurs de la file d'attente
         #On établit la liste des machines sur lesquels on peut travailler
         Machines_available = []
@@ -127,15 +131,16 @@ def worker_affectation(time) :
                 if machine.occupation == 0 :
                     Machines_available.append(machine)
         for machine in Machines_available : 
-            if worker.skills[machine_index]==1: #on voit s'il peut travailler sur la machine
+            if worker.skills[machine.number - 1]==1: #on voit s'il peut travailler sur la machine
                 Waiting_workers.pop(worker_index)
                 machine.occupation = 1 
-                product = machine.pop(0) #on retire le produit de la file d'attente
-                time_interval = product.path[machine_index] #on récupère l'intervalle de temps que peut prendre le produit pour passer sur la machine
-                duration = random.randrange(time_interval[0],time_interval[1]+1 , 1) #prends un entier dans l'intervalle
-                Events.append(Liberation(time + duration, worker, machine, product)) # on crée le nouvel évènement
-                machine_index +=1
-            worker_index+=1
+                product = machine.queue.pop(0) #on retire le produit de la file d'attente
+                time_interval = product.duration[machine.number -1] #on récupère l'intervalle de temps que peut prendre le produit pour passer sur la machine
+                exact_duration = random.randrange(time_interval[0],time_interval[1]+1 , 1) #prends un entier dans l'intervalle
+                Events.append(Liberation(time + exact_duration, worker.number, machine.number, product)) # on crée le nouvel évènement
+                Events.sort(key=lambda x: x.time) #on trie selon le temps 
+                print( str(time) + ' : ' + 'Worker ' + str(worker.number) + ' is affected at machine ' + str(machine.number))
+        worker_index+=1
             
 ### Affectation suivant l'heuristique
 
@@ -198,4 +203,19 @@ def update_fatigue(worker,duration, penibility):
 
         
 #worker affectation doit renvoyer un evenment liberation avec le worker et ma machine
+ 
+ 
+ 
+
+ 
+ #Test : 
+Waiting_workers = [Worker1, Worker2, Worker3, Worker4]
+Events.append(Product_arrival(0,1))
+next_event(Events)
+next_event(Events)
+next_event(Events)
+next_event(Events)
+next_event(Events)
+next_event(Events)
+ 
         
