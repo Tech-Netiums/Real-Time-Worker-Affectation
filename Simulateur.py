@@ -1,14 +1,12 @@
 # -*- coding: utf-8 -*-
 """
 Created on Wed Mar 18 22:30:22 2020
-
 @author: louis
 """
 import random 
 import math
 import numpy as np
 from termcolor import colored
-
 import parameters as param
 
 #Paramètre représentant l'influence de la fatigue
@@ -19,7 +17,7 @@ nu = param.nu
 
 #Cas d'étude
 cas = param.nb_case
-        
+
 class Product : 
     def __init__(self, number, path, duration):
         self.number = number
@@ -41,7 +39,7 @@ class Product :
 Products = []
 for i in range(1,5):
     Products.append(Product(i, param.path[i-1], param.duration[i-1]))
-    
+
 #Création des 4 travailleurs
 class Worker :
     def __init__(self, number,  Skills): 
@@ -56,6 +54,14 @@ Workers = []
 for i in range(1,5):
     Workers.append(Worker(i, param.skill_matrix[cas-1][i-1]))
 
+
+class Machine : 
+    def __init__(self, number, penibility):
+        self.number = number
+        self.queue = []
+        self.occupation = 0
+        self.penibility = penibility
+        
 #Création des 8 machines
 class Machine : 
     def __init__(self, number, penibility):
@@ -98,7 +104,6 @@ Waiting_workers = []
 
 
 def next_event(Events):
-
     next_event = Events.pop(0) # on récupère le prochain évènement
     
     if  isinstance(next_event, Product_arrival): 
@@ -106,7 +111,7 @@ def next_event(Events):
         product = Products[num_prod - 1]
         num_machine = product.path[0] #on détermine la 1ere machine où doit passer le produit
         machine = Machines[num_machine -1]
-        if not machine.queue  : #on regarde si la liste est vide
+        if not machine.queue == 0 : #on regarde si la liste est vide
             machine.queue.append(product)
             product.arrivals.append(next_event.time)
             print( str(next_event.time) + ' : ' + colored('Product ' + str(num_prod), 'green') +  ' arrives at' + colored(' Machine ' + str(num_machine), 'red') )
@@ -127,8 +132,17 @@ def next_event(Events):
             next_machine_number = next_event.product.path[ next_event.product.path.index(machine_num) + 1 ] #on identifie ou la machine actuelle se situe dans le chemin puis on détermine la prochaine 
             Machines[next_machine_number -1].queue.append(next_event.product) # on envoie le produit dans la file d'attente de la prochaine machine
             print( str(next_event.time) + ' : ' + colored('Product ' + str(next_event.product.number), 'green') +  ' is sent to' + colored(' Machine '+ str(next_machine_number), 'red')  ) 
-
- 
+        
+        else : 
+            print( str(next_event.time) + ' : ' + colored('Product ' + str(next_event.product.number), 'green') +  ' is finished'   ) 
+            product = Products[next_event.product.number - 1]
+            product.departures.append(next_event.time)
+            
+        Waiting_workers.append(Workers[next_event.worker_num - 1]) #on ajoute le travailleurs à la file de travailleurs libres
+        
+        
+        return basic(next_event.time)
+  
 
 def basic(time) :
     worker_index = 0
@@ -318,9 +332,8 @@ def run(Events):
 
  #Test : 
 
- 
- 
 
+Waiting_workers = [Workers[i] for i in range(len(Workers))]
 
 Events.append(Product_arrival(0,1))
 Events.append(Product_arrival(0,2))
