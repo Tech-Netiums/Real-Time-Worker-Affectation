@@ -101,7 +101,7 @@ def next_event(Events):
         product = Products[num_prod - 1]
         num_machine = product.path[0] #on détermine la 1ere machine où doit passer le produit
         machine = Machines[num_machine -1]
-        if not machine.queue == 0 : #on regarde si la liste est vide
+        if not machine.queue  : #on regarde si la liste est vide
             machine.queue.append(product)
             product.arrivals.append(next_event.time)
             print( str(next_event.time) + ' : ' + colored('Product ' + str(num_prod), 'green') +  ' arrives at' + colored(' Machine ' + str(num_machine), 'red') )
@@ -316,15 +316,17 @@ def MFT() :
 def generate_items_arrival():
     time = 0 
     
- 
+def run(Events): 
+    while len(Events) != 0 :
+        next_event(Events)
+
  #Test : 
+ 
+ 
+ 
 Waiting_workers = [Worker1, Worker2, Worker3, Worker4]
 Events.append(Product_arrival(0,1))
-next_event(Events)
-next_event(Events)
-next_event(Events)
-next_event(Events)
-next_event(Events)
-next_event(Events)
+Events.append(Product_arrival(0,2))
+run(Events)
 MFT = MFT()
 print(MFT)
