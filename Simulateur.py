@@ -7,6 +7,7 @@ Created on Wed Mar 18 22:30:22 2020
 import random 
 import math
 import numpy as np
+from termcolor import colored
 
 delta = 0.3
 
@@ -15,6 +16,8 @@ class Product :
         self.number = number
         self.path = path 
         self.duration = duration 
+        self.arrivals = []
+        self.departures = []
         
         
 Product1 = Product(1, [1,2,3,4,8], [[14,17], [5,8], [28,32], [2,4], None, None, None, [30,37]])
@@ -97,7 +100,8 @@ def next_event(Events):
         machine = Machines[num_machine -1]
         if not machine.queue == 0 : #on regarde si la liste est vide
             machine.queue.append(product)
-            print( str(next_event.time) + ' : ' + 'Product ' + str(num_prod) +  ' arrives at machine ' + str(num_machine) )
+            product.arrivals.append(next_event.time)
+            print( str(next_event.time) + ' : ' + colored('Product ' + str(num_prod), 'green') +  ' arrives at' + colored(' Machine ' + str(num_machine), 'red') )
             return worker_affectation(next_event.time)  #on lance l'affectation d'employés
             
     if isinstance(next_event, Liberation): 
@@ -105,13 +109,18 @@ def next_event(Events):
         machine_num = next_event.machine_num
         machine = Machines[machine_num - 1] #faire fonction get_machine
         machine.occupation = 0 # on libère la machine
-        print (str(next_event.time) + ' : ' + 'Machine ' + str(machine_num) + ' is liberated by worker ' + str(next_event.worker_num))
+        print (str(next_event.time) + ' : ' + colored('Machine ' + str(machine_num), 'red') + ' is liberated by'  + colored(' Worker ' + str(next_event.worker_num), 'cyan' ))
         #on pourra songer à indiquer dans occupied le worker qui travaille sur la machine 0 (vide , 1 ,2,3,4  ), idem pour les machines
         if next_event.product.path.index(machine_num) +1 != len(next_event.product.path):# est ce que le produit doit passer par d'autres machines
             next_machine_number = next_event.product.path[ next_event.product.path.index(machine_num) + 1 ] #on identifie ou la machine actuelle se situe dans le chemin puis on détermine la prochaine 
             Machines[next_machine_number -1].queue.append(next_event.product) # on envoie le produit dans la file d'attente de la prochaine machine
-            print( str(next_event.time) + ' : ' + 'Product ' + str(next_event.product.number) +  ' is sent to machine ' + str(next_machine_number) ) 
+            print( str(next_event.time) + ' : ' + colored('Product ' + str(next_event.product.number), 'green') +  ' is sent to' + colored(' Machine '+ str(next_machine_number), 'red')  ) 
         
+        else : 
+            print( str(next_event.time) + ' : ' + colored('Product ' + str(next_event.product.number), 'green') +  ' is finished'   ) 
+            product = Products[next_event.product.number - 1]
+            product.departures.append(next_event.time)
+            
         Waiting_workers.append(Workers[next_event.worker_num - 1]) #on ajoute le travailleurs à la file de travailleurs libres
         
         
@@ -139,7 +148,7 @@ def worker_affectation(time) :
                 exact_duration = random.randrange(time_interval[0],time_interval[1]+1 , 1) #prends un entier dans l'intervalle
                 Events.append(Liberation(time + exact_duration, worker.number, machine.number, product)) # on crée le nouvel évènement
                 Events.sort(key=lambda x: x.time) #on trie selon le temps 
-                print( str(time) + ' : ' + 'Worker ' + str(worker.number) + ' is affected at machine ' + str(machine.number))
+                print( str(time) + ' : ' + colored('Worker ' + str(worker.number), 'cyan' )+ ' is affected at' + colored(' Machine ' + str(machine.number), 'red'))
         worker_index+=1
             
 ### Affectation suivant l'heuristique
@@ -203,10 +212,18 @@ def update_fatigue(worker,duration, penibility):
 
         
 #worker affectation doit renvoyer un evenment liberation avec le worker et ma machine
- 
- 
- 
-
+def MFT() : 
+    MFT = []
+    for product in Products :
+        total = 0 
+        for i  in range(len(product.departures)) : # on parcourt departures car certains produits peuvent encore être dans le système
+            total += product.departures[i] - product.arrivals[i]
+        MFT.append(total)
+    return MFT
+  
+def generate_items_arrival():
+    time = 0 
+    
  
  #Test : 
 Waiting_workers = [Worker1, Worker2, Worker3, Worker4]
@@ -217,5 +234,5 @@ next_event(Events)
 next_event(Events)
 next_event(Events)
 next_event(Events)
- 
-        
+MFT = MFT()
+print(MFT)
