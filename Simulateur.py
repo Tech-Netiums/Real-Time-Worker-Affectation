@@ -56,8 +56,6 @@ Workers = []
 for i in range(1,5):
     Workers.append(Worker(i, param.skill_matrix[cas-1][i-1]))
 
-Workers = [Worker1, Worker2, Worker3, Worker4]
-
 #Création des 8 machines
 class Machine : 
     def __init__(self, number, penibility):
