@@ -9,8 +9,11 @@ import math
 import numpy as np
 from termcolor import colored
 
+# Paramètre représentant l'influence de la fatigue
 delta = 0.3
 
+# Importance accordée à chacun des deux critères
+nu = [0.5,0.5]
 class Product : 
     def __init__(self, number, path, duration):
         self.number = number
@@ -102,7 +105,11 @@ def next_event(Events):
             machine.queue.append(product)
             product.arrivals.append(next_event.time)
             print( str(next_event.time) + ' : ' + colored('Product ' + str(num_prod), 'green') +  ' arrives at' + colored(' Machine ' + str(num_machine), 'red') )
-            return worker_affectation(next_event.time)  #on lance l'affectation d'employés
+            return basic(next_event.time)  #on lance l'affectation d'employés
+        else : 
+            machine.queue.append(product)
+            product.arrivals.append(next_event.time)
+            print( str(next_event.time) + ' : ' + colored('Product ' + str(num_prod), 'green') +  ' arrives at' + colored(' Machine ' + str(num_machine), 'red') )
             
     if isinstance(next_event, Liberation): 
         #par la suite créer une fonction libération
@@ -124,16 +131,17 @@ def next_event(Events):
         Waiting_workers.append(Workers[next_event.worker_num - 1]) #on ajoute le travailleurs à la file de travailleurs libres
         
         
-        return worker_affectation(next_event.time)
+        return basic(next_event.time)
   
 
-      
-### Affectation basique : on affecte le premier qui marche       
-
-def worker_affectation(time) :
+def basic(time) :
     worker_index = 0
-    for worker in Waiting_workers :  # on essaie d'affecter chacun des travailleurs de la file d'attente
+    copy_waiting_workers = []
+    for i in range(len(Waiting_workers)) :
+        copy_waiting_workers.append(Waiting_workers[i])
+    for worker in copy_waiting_workers :  # on essaie d'affecter chacun des travailleurs de la file d'attente
         #On établit la liste des machines sur lesquels on peut travailler
+        affected = False
         Machines_available = []
         for machine in Machines :
             if len(machine.queue) != 0 :
@@ -149,58 +157,142 @@ def worker_affectation(time) :
                 Events.append(Liberation(time + exact_duration, worker.number, machine.number, product)) # on crée le nouvel évènement
                 Events.sort(key=lambda x: x.time) #on trie selon le temps 
                 print( str(time) + ' : ' + colored('Worker ' + str(worker.number), 'cyan' )+ ' is affected at' + colored(' Machine ' + str(machine.number), 'red'))
-        worker_index+=1
-            
-### Affectation suivant l'heuristique
+                affected = True
+                break
+        if not affected : 
+            worker_index+=1
 
-def worker_affectation_bis(time) : 
+
+
+
+### TOPSIS Affectation
+
+
+def topsis(time) : 
     worker_index = 0
-    machine_index = 0
-    for worker in Waiting_workers :
+    copy_waiting_worker = []
+    for i in range(len(Waiting_workers)) :
+        copy_waiting_worker.append(Waiting_workers[i])
+    for worker in copy_waiting_worker :
         Machines_available = []
         for machine in Machines :
             if len(machine.queue) != 0 :
                 if machine.occupation == 0 :
-                    if machine.index in worker.skills :
+                    if worker.skills[machine.number - 1] == 1:
                         Machines_available.append(machine)
+                                
+        #Premier cas : pas de machines dispo, le worker doit attendre
         if len(Machines_available) == 0 :
             worker_index += 1
+            
+        #Second cas : une seule machine disponible, on assigne le worker
         elif len(Machines_available) == 1 :
             machine = Machines_available[0]
             Waiting_workers.pop(worker_index)
             machine.occupation = 1
-            product = machine.pop(0) #on retire le produit de la file d'attente
-            time_interval = product.path[Machines.available[0].number] #on récupère l'intervalle de temps que peut prendre le produit pour passer sur la machine
-            penibility = Machines[machine_index].penibility
+            product = machine.queue.pop(0) #on retire le produit de la file d'attente
+            time_interval = product.duration[machine.number - 1] #on récupère l'intervalle de temps que peut prendre le produit pour passer sur la machine
+            penibility = machine.penibility
             initial_duration = random.randrange(time_interval[0],time_interval[1]+1 , 1) #prends un entier dans l'intervalle
-            duration = initial_duration * ( 1 + delta * penibility * (math.log(1 + worker.fatigue) ))
-            update_fatigue(worker,duration,penibility)
-            Events.append(Liberation(time + duration, worker, machine, product)) # on crée le nouvel évènement
-            worker_index +=1
+            exact_duration = initial_duration * ( 1 + delta * penibility * (math.log(1 + worker.fatigue) ))
+            update_fatigue(worker, exact_duration, penibility)
+            Events.append(Liberation(time + exact_duration, worker.number, machine.number, product)) # on crée le nouvel évènement
+            Events.sort(key=lambda x: x.time) #on trie selon le temps 
+            print( str(time) + ' : ' + 'Worker ' + str(worker.number) + ' is affected at machine ' + str(machine.number))
+            
+        #Troisième cas : au moins deux machines sont disponibles, utilisation de l'heuristique
         else : 
             # On construit dans un premier temps la matrice A
             A = np.zeros((len(Machines_available),2))
             for i in range(len(Machines_available)) :
+                machine = Machines_available[i]
+                
                 #Critère C1 : SPT
-                time_interval = product.path[Machines_available[i].number]
+                time_interval = product.duration[machine.number - 1]
                 initial_duration = random.randrange(time_interval[0],time_interval[1]+1 , 1)
-                penibility = Machines_available[i].penibility
-                duration = initial_duration * ( 1 + delta * penibility * (math.log(1 + worker.fatigue) ))
-                A[i][0] = duration
+                penibility = machine.penibility
+                exact_duration = initial_duration * ( 1 + delta * penibility * (math.log(1 + worker.fatigue) ))
+                A[i][0] = exact_duration
+                
                 #Critère C2 : LNQ 
-                queue = Machines_available[i].queue
+                queue = machine.queue
                 lower_bound_fatigue = worker.fatigue
-                duration = 0
+                exact_duration = 0
                 for j in range(len(queue)) : 
                     product_queued = queue[j]
-                    time_interval = product_queued.path[Machines_available[i].number]
+                    time_interval = product_queued.duration[machine.number - 1]
                     initial_duration = random.randrange(time_interval[0],time_interval[1]+1 , 1)
-                    duration = duration + initial_duration * ( 1 + delta * penibility * (math.log(1 + lower_bound_fatigue) ))
-                A[i][1] = duration
+                    exact_duration += initial_duration * ( 1 + delta * penibility * (math.log(1 + lower_bound_fatigue) ))
+                A[i][1] = exact_duration
                 
-            # On normalise cette matrice
-            #... Affaire à suivre
+            # On normalise cette matrice 
+            R = np.zeros((len(Machines_available),2))
+            for j in range(2) :
+                norm = 0
+                for i in range(len(Machines_available)) :
+                    norm +=  A[i][j]
+                norm = math.sqrt(norm)
+                for i in range(len(Machines_available)) :
+                    R[i][j] = A[i][j]/norm
+                    
+            #On pondère la matrice
+            V = np.zeros((len(Machines_available),2))
+            for j in range(2) :
+                for i in range(len(Machines_available)) :
+                    V[i][j] = nu[j]*R[i][j]
+            
+            #Détermination de la pire et de la meilleure alternative
+            min_C = [V[0][0], V[0][1]]
+            max_C = [V[0][0], V[0][1]]
+            for i in range(len(Machines_available)) :
+                for j in range(2) :
+                    if V[i][j] < min_C[j] :
+                        min_C[j] = V[i][j]
+                    elif V[i][j] < max_C[j] : 
+                        max_C[j] = V[i][j]
                         
+            #best solution
+            IA = [max_C[1], min_C[0]]
+            #worst solution
+            WA = [max_C[0], min_C[1]]
+            
+            #Mesure de la distance euclidienne 
+            IS = []
+            WS = []
+            for j in range(len(Machines_available)) : 
+                ISj = math.sqrt(V[j][0] - IA[0] + V[j][1] - IA[1])
+                WSj = math.sqrt(V[j][0] - WA[0] + V[j][1] - WA[1])
+                IS.append(ISj)
+                WS.append(WSj)
+                
+            #Calcul de la similitude avec les pires conditions
+            S = []
+            for j in range(len(Machines_available)) : 
+                S.append(IS[j]/(IS[j]+WS[j]))
+            
+            #Détermination du ratio max 
+            maxS = S[0]
+            machine_index = 0
+            for j in range(len(Machines_available)) :
+                if S[j] > maxS :
+                    maxS = S[j]
+                    machine_index = j
+            machine = Machines_available[machine_index]
+            
+            #Affectation
+            Waiting_workers.pop(worker_index)
+            machine.occupation = 1
+            product = machine.queue.pop(0) #on retire le produit de la file d'attente
+            time_interval = product.duration[machine.number - 1] #on récupère l'intervalle de temps que peut prendre le produit pour passer sur la machine
+            penibility = machine.penibility
+            initial_duration = random.randrange(time_interval[0],time_interval[1]+1 , 1) #prends un entier dans l'intervalle
+            exact_duration = initial_duration * ( 1 + delta * penibility * (math.log(1 + worker.fatigue) ))
+            update_fatigue(worker, exact_duration, penibility)
+            Events.append(Liberation(time + exact_duration, worker.number, machine.number, product)) # on crée le nouvel évènement
+            Events.sort(key=lambda x: x.time) #on trie selon le temps 
+            print( str(time) + ' : ' + 'Worker ' + str(worker.number) + ' is affected at machine ' + str(machine.number))
+         
+
  ##Créer une fonction pour la fatigue               
         
 def update_fatigue(worker,duration, penibility):
