@@ -5,6 +5,8 @@ Created on Sun Apr 12 16:30:00 2020
 @author: simon
 """
 
+from matplotlib import pyplot as plt
+
 import numpy as np
 
 lam = [[0.7,0.02,0.08,0.2,0.035,0.015,0.065,0.3,0.025,0.085,0.04],
@@ -29,3 +31,8 @@ for i in range(4) :
             new_arrival = next_arrival(i,time)
             time += new_arrival
             product_arrival[i].append(time)
+            
+            
+#X= product_arrival[0] + product_arrival[1] + product_arrival[2] + product_arrival[3]
+#plt.plot(X)
+#plt.show()

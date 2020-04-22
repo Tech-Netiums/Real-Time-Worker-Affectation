@@ -28,6 +28,7 @@ class Machine :
     def __init__(self, number, penibility):
         self.number = number
         self.queue = []
+        self.time_queue = []
         self.occupation = 0
         self.penibility = penibility
 

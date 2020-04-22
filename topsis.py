@@ -84,3 +84,13 @@ def topsis(Machines_available, worker) :
             maxS = S[j]
             machine_index = j
     return machine_index
+
+
+
+
+def meunier(Machines_available, worker) : 
+    for i in range(len(Machines_available)-1) :
+        machine1 = Machines_available[i]
+        machine2 = Machines_avalaible[i+1]
+        
+    

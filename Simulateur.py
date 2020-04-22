@@ -53,6 +53,9 @@ def next_event(Events):
             machine.queue.append(product)
             product.arrivals.append(next_event.time)
             print( str(next_event.time) + ' : ' + colored('Product ' + str(num_prod), 'green') +  ' arrives at' + colored(' Machine ' + str(num_machine), 'red') )
+            time_interval = product.duration[num_machine - 1]
+            initial_duration = random.randrange(time_interval[0],time_interval[1]+1 , 1)
+            Machines[num_machine - 1].time_queue.append(initial_duration)
             return heuristique(next_event.time)  #on lance l'affectation d'employés
         else : 
             machine.queue.append(product)
@@ -69,6 +72,9 @@ def next_event(Events):
         if next_event.product.path.index(machine_num) +1 != len(next_event.product.path):# est ce que le produit doit passer par d'autres machines
             next_machine_number = next_event.product.path[ next_event.product.path.index(machine_num) + 1 ] #on identifie ou la machine actuelle se situe dans le chemin puis on détermine la prochaine 
             Machines[next_machine_number -1].queue.append(next_event.product) # on envoie le produit dans la file d'attente de la prochaine machine
+            time_interval = next_event.product.duration[next_machine_number - 1]
+            initial_duration = random.randrange(time_interval[0],time_interval[1]+1 , 1)
+            Machines[next_machine_number -1].time_queue.append(initial_duration)
             print( str(next_event.time) + ' : ' + colored('Product ' + str(next_event.product.number), 'green') +  ' is sent to' + colored(' Machine '+ str(next_machine_number), 'red')  ) 
         
         else : 
@@ -150,9 +156,9 @@ def affectation(machine, worker, worker_index, time) :
     Waiting_workers.pop(worker_index)
     machine.occupation = 1
     product = machine.queue.pop(0) #on retire le produit de la file d'attente
-    time_interval = product.duration[machine.number - 1] #on récupère l'intervalle de temps que peut prendre le produit pour passer sur la machine
+    #time_interval = product.duration[machine.number - 1] #on récupère l'intervalle de temps que peut prendre le produit pour passer sur la machine
     penibility = machine.penibility
-    initial_duration = random.randrange(time_interval[0],time_interval[1]+1 , 1) #prends un entier dans l'intervalle
+    initial_duration = machine.time_queue.pop(0) #prends un entier dans l'intervalle
     exact_duration = initial_duration * ( 1 + delta * penibility * (math.log(1 + worker.fatigue) ))
     update_fatigue(worker, exact_duration, penibility)
     Events.append(Liberation(time + exact_duration, worker.number, machine.number, product)) # on crée le nouvel évènement
@@ -183,16 +189,16 @@ def run(Events):
 
 #Test : 
 
-"""Waiting_workers = [Workers[i] for i in range(len(Workers))]
-
-Events.append(Product_arrival(0,1))
-Events.append(Product_arrival(0,2))
-Events.append(Product_arrival(0,3))
-Events.append(Product_arrival(0,4))
-Events.append(Product_arrival(10,1))
-run(Events)
-MFT = MFT()
-print(MFT)"""
+#Waiting_workers = [Workers[i] for i in range(len(Workers))]
+#
+#Events.append(Product_arrival(0,1))
+#Events.append(Product_arrival(0,2))
+#Events.append(Product_arrival(0,3))
+#Events.append(Product_arrival(0,4))
+#Events.append(Product_arrival(10,1))
+#run(Events)
+#MFT = MFT()
+#print(MFT)
 
 #Journée de 8h
 
