@@ -86,11 +86,23 @@ def topsis(Machines_available, worker) :
     return machine_index
 
 
-
-
-def meunier(Machines_available, worker) : 
-    for i in range(len(Machines_available)-1) :
-        machine1 = Machines_available[i]
-        machine2 = Machines_avalaible[i+1]
+#def pi(k,l, machine1, machine2):
+#    m = len(machine1.queue)
+#    n = len(machine2.queue)
+#    sk = machine1.time_queue[k - 1] 
+#    tl = machine2.time_queue[l - 1]
+#    arg1 = pi(k - 1, l) + (m  +  n + 1 - k - l) * sk 
+#    arg2 = pi(k, l - 1) + (m + n + 1 - k - l) * tl
+#    pkl = min([arg1,arg2])
+#
+#def choix_machine(machine1, machine2):
+#    pass
+#    
+#
+#def meunier(Machines_available, worker) : 
+#    for i in range(len(Machines_available)-1) :
+#        machine1 = Machines_available[i]
+#        machine2 = Machines_avalaible[i+1]
+#        pass
         
     
