@@ -51,7 +51,7 @@ def next_event(Events):
         machine = Machines[num_machine -1]
         time_interval = product.duration[num_machine - 1]
         initial_duration = random.randrange(time_interval[0],time_interval[1]+1 , 1)
-        Machines[num_machine - 1].time_queue.append(initial_duration)
+        machine.time_queue.append(initial_duration)
         if len(machine.queue) == 0 : #on regarde si la liste est vide
             machine.queue.append(product)
             product.arrivals.append(next_event.time)
