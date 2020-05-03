@@ -5,6 +5,7 @@ Created on Wed Apr 15 14:08:02 2020
 @author: simon
 """
 
+#Classe des produits
 class Product : 
     def __init__(self, number, path, duration):
         self.number = number
@@ -13,17 +14,21 @@ class Product :
         self.arrivals = []
         self.departures = []
 
-#Création des 4 travailleurs
+#Classe des travailleurs
 class Worker :
     def __init__(self, number,  Skills): 
         self.number = number 
         self.skills = Skills
         self.fatigue = 0
+        self.list_fatigue = [0]
+        self.list_time = [0]
         
-    def increase_fatigue(self, new_fatigue_level): 
+    def increase_fatigue(self, new_fatigue_level, time): 
         self.fatigue = new_fatigue_level
+        self.list_fatigue.append(new_fatigue_level)
+        self.list_time.append(time)
         
-#Création des 8 machines
+#Classe des machines
 class Machine : 
     def __init__(self, number, penibility):
         self.number = number

@@ -5,7 +5,7 @@ Created on Sun Apr 12 16:30:00 2020
 @author: simon
 """
 
-from matplotlib import pyplot as plt
+from parameters import number_of_days
 
 import numpy as np
 
@@ -18,21 +18,28 @@ def next_arrival(id_product, time) :
     index = int(time/60)
     m = lam[id_product][index+1] - lam[id_product][index] #coeff directeur de la droite
     p = lam[id_product][index] - m*index
-    lamb = m*time/60 + p
+    lamb = (m*time/60 + p)/10
     return np.random.exponential(1/lamb)
 
 time_limit = 60*8
 
-product_arrival = [[],[],[],[]]
-
-for i in range(4) : 
+def generate() : 
+    product_arrival = [[],[],[],[]]
+    for i in range(4) : 
         time = 0.
         while time < time_limit :
             new_arrival = next_arrival(i,time)
             time += new_arrival
-            product_arrival[i].append(time)
-            
-            
-#X= product_arrival[0] + product_arrival[1] + product_arrival[2] + product_arrival[3]
-#plt.plot(X)
-#plt.show()
+            if time < time_limit :
+                product_arrival[i].append(time)
+    return product_arrival
+
+#Génère les arrivées pour un jour
+product_arrival = generate()
+
+#Génère les arrivées sur n jours 
+
+product_arrival_n_days = []
+
+for i in range(number_of_days) : 
+    product_arrival_n_days.append(generate())

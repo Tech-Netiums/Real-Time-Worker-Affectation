@@ -6,10 +6,12 @@ Created on Wed Mar 18 22:30:22 2020
 import random 
 import math
 from termcolor import colored
+import matplotlib.pyplot as plt
 import parameters as param
-from productArrival import product_arrival
+from productArrival import product_arrival, product_arrival_n_days
 from topsis import topsis
 from objet import Product, Worker, Machine, Liberation, Product_arrival
+from fatigueMeunier import fatigueMeunier
 
 #Paramètre représentant l'influence de la fatigue
 delta = param.delta
@@ -144,7 +146,6 @@ def heuristique(time) :
             
             """Ici, on peut utiliser n'importe quelle heuristique en remplaçant
             la fonction topsis par une autre heuristique"""
-            #On appelle topsis
             machine = Machines_available[topsis(Machines_available, worker)]
             
             #Affectation
@@ -160,60 +161,76 @@ def affectation(machine, worker, worker_index, time) :
     penibility = machine.penibility
     initial_duration = machine.time_queue.pop(0) #récupere le temps inital depuis la file d'attente
     exact_duration = initial_duration * ( 1 + delta * penibility * (math.log(1 + worker.fatigue) ))
-    update_fatigue(worker, exact_duration, penibility)
+    update_fatigue(worker, exact_duration, penibility,time)
     Events.append(Liberation(time + exact_duration, worker.number, machine.number, product)) # on crée le nouvel évènement
     Events.sort(key=lambda x: x.time) #on trie selon le temps
     print( str(time) + ' : ' + 'Worker ' + str(worker.number) + ' is affected at machine ' + str(machine.number))
 
 
 #Fonction actualisant le niveau de fatigue après calcul                       
-def update_fatigue(worker,duration, penibility):
+def update_fatigue(worker,duration, penibility,time):
     fatigue = worker.fatigue
     new_fatigue_level = fatigue + (1 - fatigue) * (1 - math.exp(-penibility*duration))
-    worker.increase_fatigue(new_fatigue_level)
+    worker.increase_fatigue(new_fatigue_level,time)
         
 #Calcul du mean flowtime
 def MFT() : 
     MFT = []
     for product in Products :
         total = 0 
-        for i  in range(len(product.departures)) : # on parcourt departures car certains produits peuvent encore être dans le système
-            total += product.departures[i] - product.arrivals[i]
+        lenght = len(product.departures)
+        for i  in range(lenght) : 
+            # on parcourt departures car certains produits peuvent encore être dans le système
+            departure = product.departures.pop(0)
+            arrival = product.arrivals.pop(0)
+            total += departure - arrival
         MFT.append(total)
-    return MFT
+    sum_MFT = 0
+    for i in range(4) : 
+        sum_MFT += MFT[i]
+    return sum_MFT
 
 #Fonction permettant de dépiler les événements    
 def run(Events): 
     while len(Events) != 0 :
         next_event(Events)
-
-#Test : 
-
-Waiting_workers = [Workers[i] for i in range(len(Workers))]
-#
-Events.append(Product_arrival(0,1))
-Events.append(Product_arrival(0,2))
-Events.append(Product_arrival(0,3))
-Events.append(Product_arrival(0,4))
-Events.append(Product_arrival(10,1))
-run(Events)
-MFT = MFT()
-print(MFT)
+        
+#Fonction permettant de tracer les courbes d'évolution de la fatigue des workers
+def plot_fatigue() :
+    for i in range(len(Workers)) :
+        plt.plot(Workers[i].list_time,Workers[i].list_fatigue, label = "worker " + str(i))     
 
 #Journée de 8h
 
 Waiting_workers = [Workers[i] for i in range(len(Workers))]
 
-def average_day() : 
+def average_day(prod_arrival) : 
     #Génération de la totalité des arrivées de produits
     for i in range(4) : 
-        product_i = product_arrival[i]
+        product_i = prod_arrival[i]
         for j in range (len(product_i)) : 
             Events.append(Product_arrival(product_i[j],i+1))
-    Events.sort(key=lambda x: x.time) #on trie selon le temps 
-    
+    Events.sort(key=lambda x: x.time) #on trie selon le temps
     #On traite les événements
     run(Events)
-    Average_MFT = MFT()
-    print(Average_MFT)
-    
+    mft = MFT()
+    return mft
+
+
+#Simuler n journées de 8h
+
+def simulation_n_days() : 
+    MFTs = []
+    average_mft = 0
+    variance = 0
+    #Calcul de la moyenne 
+    for i in range(param.number_of_days) :
+        day_i = average_day(product_arrival_n_days[i])
+        average_mft += day_i
+        MFTs.append(day_i)
+    average_mft = average_mft/param.number_of_days
+    #Calcul de la variance
+    for i in range(param.number_of_days) :
+        variance += (MFTs[i] - average_mft)**2
+    standard_deviation = math.sqrt(variance/param.number_of_days)
+    return average_mft,standard_deviation
