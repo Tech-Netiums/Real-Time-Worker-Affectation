@@ -20,7 +20,7 @@ def topsis(Machines_available, worker) :
         #Critère C1 : SPT
         initial_duration = machine.time_queue[0]
         penibility = machine.penibility
-        exact_duration = initial_duration * ( 1 + delta * penibility * (math.log(1 + worker.fatigue) ))
+        exact_duration = initial_duration * ( 1 + delta * (math.log(1 + worker.fatigue) ))
         A[i][0] = exact_duration
         
         #Critère C2 : LNQ 
@@ -28,7 +28,7 @@ def topsis(Machines_available, worker) :
         lower_bound_fatigue = worker.fatigue + (1 - worker.fatigue)*(1 - math.exp(-penibility*exact_duration))
         for j in range(len(queue)-1) : 
             initial_duration = machine.time_queue[j+1]
-            additional_duration = initial_duration * ( 1 + delta * penibility * (math.log(1 + lower_bound_fatigue) ))
+            additional_duration = initial_duration * ( 1 + delta * (math.log(1 + lower_bound_fatigue) ))
             exact_duration += additional_duration
             lower_bound_fatigue += (1 - lower_bound_fatigue)*(1 - math.exp(-penibility*additional_duration))
         A[i][1] = exact_duration
@@ -42,7 +42,7 @@ def topsis(Machines_available, worker) :
         norm = math.sqrt(norm)
         for i in range(len(Machines_available)) :
             V[i][j] = nu[j]*A[i][j]/norm
-
+    
     #Détermination de la pire et de la meilleure alternative
     min_C = [V[0][0], V[0][1]]
     max_C = [V[0][0], V[0][1]]
@@ -69,8 +69,12 @@ def topsis(Machines_available, worker) :
         
     #Calcul de la similitude avec les pires conditions
     S = []
-    for j in range(len(Machines_available)) : 
-        S.append(IS[j]/(IS[j]+WS[j]))
+    for j in range(len(Machines_available)) :
+        if IS[j]+WS[j] != 0 :
+            S.append(IS[j]/(IS[j]+WS[j]))
+        else :
+            # Cas où on a deux files de même longueur et avec des tâches de même durées
+            return random.randrange(0,len(Machines_available),1)
     
     #Détermination du ratio max 
     maxS = S[0]

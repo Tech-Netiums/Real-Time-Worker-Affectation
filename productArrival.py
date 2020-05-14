@@ -18,8 +18,8 @@ def next_arrival(id_product, time) :
     index = int(time/60)
     m = lam[id_product][index+1] - lam[id_product][index] #coeff directeur de la droite
     p = lam[id_product][index] - m*index
-    lamb = (m*time/60 + p)/10
-    return np.random.exponential(1/lamb)
+    lamb = (m*time/60 + p)
+    return 10*np.random.exponential(1/lamb)
 
 time_limit = 60*8
 

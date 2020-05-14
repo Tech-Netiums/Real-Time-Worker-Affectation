@@ -12,6 +12,8 @@ from productArrival import product_arrival, product_arrival_n_days
 from topsis import topsis
 from objet import Product, Worker, Machine, Liberation, Product_arrival
 from fatigueMeunier import fatigueMeunier
+from heuristiqueSimon import heuristique_simon1
+from progdynamique import prog_dynamique
 
 #Paramètre représentant l'influence de la fatigue
 delta = param.delta
@@ -57,19 +59,19 @@ def next_event(Events):
         if len(machine.queue) == 0 : #on regarde si la liste est vide
             machine.queue.append(product)
             product.arrivals.append(next_event.time)
-            print( str(next_event.time) + ' : ' + colored('Product ' + str(num_prod), 'green') +  ' arrives at' + colored(' Machine ' + str(num_machine), 'red') )
+            #print( str(next_event.time) + ' : ' + colored('Product ' + str(num_prod), 'green') +  ' arrives at' + colored(' Machine ' + str(num_machine), 'red') )
             return heuristique(next_event.time)  #on lance l'affectation d'employés
         else : 
             machine.queue.append(product)
             product.arrivals.append(next_event.time)
-            print( str(next_event.time) + ' : ' + colored('Product ' + str(num_prod), 'green') +  ' arrives at' + colored(' Machine ' + str(num_machine), 'red') )
+            #print( str(next_event.time) + ' : ' + colored('Product ' + str(num_prod), 'green') +  ' arrives at' + colored(' Machine ' + str(num_machine), 'red') )
             
     if isinstance(next_event, Liberation): 
         #par la suite créer une fonction libération
         machine_num = next_event.machine_num
         machine = Machines[machine_num - 1] #faire fonction get_machine
         machine.occupation = 0 # on libère la machine
-        print (str(next_event.time) + ' : ' + colored('Machine ' + str(machine_num), 'red') + ' is liberated by'  + colored(' Worker ' + str(next_event.worker_num), 'cyan' ))
+        #print (str(next_event.time) + ' : ' + colored('Machine ' + str(machine_num), 'red') + ' is liberated by'  + colored(' Worker ' + str(next_event.worker_num), 'cyan' ))
         #on pourra songer à indiquer dans occupied le worker qui travaille sur la machine 0 (vide , 1 ,2,3,4  ), idem pour les machines
         if next_event.product.path.index(machine_num) +1 != len(next_event.product.path):# est ce que le produit doit passer par d'autres machines
             next_machine_number = next_event.product.path[ next_event.product.path.index(machine_num) + 1 ] #on identifie ou la machine actuelle se situe dans le chemin puis on détermine la prochaine 
@@ -77,10 +79,10 @@ def next_event(Events):
             time_interval = next_event.product.duration[next_machine_number - 1] #on récupèere l'intervalle de temps du process
             initial_duration = random.randrange(time_interval[0],time_interval[1]+1 , 1)  #on genere le temps de process du porduit
             Machines[next_machine_number -1].time_queue.append(initial_duration)
-            print( str(next_event.time) + ' : ' + colored('Product ' + str(next_event.product.number), 'green') +  ' is sent to' + colored(' Machine '+ str(next_machine_number), 'red')  ) 
+            #print( str(next_event.time) + ' : ' + colored('Product ' + str(next_event.product.number), 'green') +  ' is sent to' + colored(' Machine '+ str(next_machine_number), 'red')  ) 
         
         else : 
-            print( str(next_event.time) + ' : ' + colored('Product ' + str(next_event.product.number), 'green') +  ' is finished'   ) 
+            #print( str(next_event.time) + ' : ' + colored('Product ' + str(next_event.product.number), 'green') +  ' is finished'   ) 
             product = Products[next_event.product.number - 1]
             product.departures.append(next_event.time)
             
@@ -89,34 +91,8 @@ def next_event(Events):
         
         return heuristique(next_event.time)
   
-
-def basic(time) :
-    worker_index = 0
-    copy_waiting_workers = []
-    for i in range(len(Waiting_workers)) :
-        copy_waiting_workers.append(Waiting_workers[i])
-    for worker in copy_waiting_workers :  # on essaie d'affecter chacun des travailleurs de la file d'attente
-        #On établit la liste des machines sur lesquels on peut travailler
-        affected = False
-        Machines_available = []
-        for machine in Machines :
-            if len(machine.queue) != 0 :
-                if machine.occupation == 0 :
-                    Machines_available.append(machine)
-        for machine in Machines_available : 
-            if worker.skills[machine.number - 1]==1: #on voit s'il peut travailler sur la machine
-                Waiting_workers.pop(worker_index)
-                machine.occupation = 1 
-                product = machine.queue.pop(0) #on retire le produit de la file d'attente
-                time_interval = product.duration[machine.number -1] #on récupère l'intervalle de temps que peut prendre le produit pour passer sur la machine
-                exact_duration = random.randrange(time_interval[0],time_interval[1]+1 , 1) #prends un entier dans l'intervalle
-                Events.append(Liberation(time + exact_duration, worker.number, machine.number, product)) # on crée le nouvel évènement
-                Events.sort(key=lambda x: x.time) #on trie selon le temps 
-                print( str(time) + ' : ' + colored('Worker ' + str(worker.number), 'cyan' )+ ' is affected at' + colored(' Machine ' + str(machine.number), 'red'))
-                affected = True
-                break
-        if not affected : 
-            worker_index+=1
+def randomaffectation(Machines_available, worker) :
+    return random.randrange(0,len(Machines_available),1)
 
 # Affectation selon l'heuristique définie
 def heuristique(time) : 
@@ -146,7 +122,7 @@ def heuristique(time) :
             
             """Ici, on peut utiliser n'importe quelle heuristique en remplaçant
             la fonction topsis par une autre heuristique"""
-            machine = Machines_available[topsis(Machines_available, worker)]
+            machine = Machines_available[prog_dynamique(Machines_available, worker)]
             
             #Affectation
             affectation(machine, worker, worker_index, time)
@@ -160,11 +136,11 @@ def affectation(machine, worker, worker_index, time) :
     #time_interval = product.duration[machine.number - 1] #on récupère l'intervalle de temps que peut prendre le produit pour passer sur la machine
     penibility = machine.penibility
     initial_duration = machine.time_queue.pop(0) #récupere le temps inital depuis la file d'attente
-    exact_duration = initial_duration * ( 1 + delta * penibility * (math.log(1 + worker.fatigue) ))
+    exact_duration = initial_duration * ( 1 + delta * (math.log(1 + worker.fatigue) ))
     update_fatigue(worker, exact_duration, penibility,time)
     Events.append(Liberation(time + exact_duration, worker.number, machine.number, product)) # on crée le nouvel évènement
     Events.sort(key=lambda x: x.time) #on trie selon le temps
-    print( str(time) + ' : ' + 'Worker ' + str(worker.number) + ' is affected at machine ' + str(machine.number))
+    #print( str(time) + ' : ' + 'Worker ' + str(worker.number) + ' is affected at machine ' + str(machine.number))
 
 
 #Fonction actualisant le niveau de fatigue après calcul                       
@@ -192,13 +168,22 @@ def MFT() :
 
 #Fonction permettant de dépiler les événements    
 def run(Events): 
+    time_out = 0
     while len(Events) != 0 :
         next_event(Events)
+        if len(Events) == 1 :
+            time_out = Events[0].time
+    return time_out
+    
         
 #Fonction permettant de tracer les courbes d'évolution de la fatigue des workers
 def plot_fatigue() :
     for i in range(len(Workers)) :
-        plt.plot(Workers[i].list_time,Workers[i].list_fatigue, label = "worker " + str(i))     
+        plt.plot(Workers[i].list_time,Workers[i].list_fatigue, label = "Worker" + str(i+1)) 
+        plt.legend()
+        print(Workers[i].list_time,Workers[i].list_fatigue)
+    plt.xlabel("Time")
+    plt.ylabel("Level of fatigue")
 
 #Journée de 8h
 
@@ -212,9 +197,9 @@ def average_day(prod_arrival) :
             Events.append(Product_arrival(product_i[j],i+1))
     Events.sort(key=lambda x: x.time) #on trie selon le temps
     #On traite les événements
-    run(Events)
+    time = run(Events)
     mft = MFT()
-    return mft
+    return mft, time
 
 
 #Simuler n journées de 8h
@@ -223,14 +208,34 @@ def simulation_n_days() :
     MFTs = []
     average_mft = 0
     variance = 0
+    time = 0
     #Calcul de la moyenne 
     for i in range(param.number_of_days) :
-        day_i = average_day(product_arrival_n_days[i])
+        day_i, time_i= average_day(product_arrival_n_days[i])
         average_mft += day_i
+        time += time_i
         MFTs.append(day_i)
     average_mft = average_mft/param.number_of_days
+    average_time = time/param.number_of_days
     #Calcul de la variance
     for i in range(param.number_of_days) :
+        #Au début de chaque journée les ouvriers n'ont aucune fatigue
+        for j in range(len(Workers)):
+            Workers[j].fatigue = 0
         variance += (MFTs[i] - average_mft)**2
     standard_deviation = math.sqrt(variance/param.number_of_days)
-    return average_mft,standard_deviation
+    plot_bar(MFTs,average_mft)
+    return average_mft,standard_deviation, average_time
+
+def plot_bar(MFTs,average_mft) :
+    interval = int((average_mft*0.1)//10*10)
+    MFT_max = max(MFTs)
+    number_of_interval = int(MFT_max//interval) +1
+    freq = [0 for i in range(number_of_interval)]
+    for i in range(len(MFTs)) :
+        place = int(MFTs[i]//interval)
+        freq[place] += 1
+    x = [i*interval for i in range(number_of_interval)]
+    plt.bar(x,freq, width = interval*3/4)   
+    plt.xlabel("MFT")
+    plt.ylabel("frequency")
