@@ -137,10 +137,11 @@ def deuxmachines(Machines_available, worker) :
         path.append((target[0],target[1]))
     
     path.reverse()
-    
     if path[1] == (1,0) :
+        print(0)
         return 0
     else :
+        print(1)
         return 1 
     
 #Modèle avec fatigue pour n machines
@@ -151,19 +152,24 @@ def fatigueMeunier(Machines_available, worker) :
     number_of_pairs = len(machines)//2
     alone_machine = len(machines)%2
     while number_of_pairs != 0 :
+        nb_duel = 0
         winners = []
         for i in range(number_of_pairs) :
+            nb_duel += 1
+            print(nb_duel)
             duel = [machines[i],machines[i+1]]
             index = deuxmachines(duel,worker)
             winners.append(duel[index])
             if index == 0 :
-                machines.pop(i)
-            else :
                 machines.pop(i+1)
-        winners.append(alone_machine)   
+            else :
+                machines.pop(i)
+        if alone_machine == 1 :
+            winners.append(machines[-1])   
         number_of_pairs = len(machines)//2
-        len(machines)%2
+        alone_machine = len(machines)%2
     for i in range(len(Machines_available)) : 
         if machines[0] == Machines_available[i] :
+            print(i)
             return i
             

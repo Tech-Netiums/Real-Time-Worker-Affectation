@@ -11,7 +11,7 @@ import parameters as param
 from productArrival import product_arrival, product_arrival_n_days
 from topsis import topsis
 from objet import Product, Worker, Machine, Liberation, Product_arrival
-from fatigueMeunier import fatigueMeunier
+from fatigueMeunier import fatigueMeunier, deuxmachines
 from heuristiqueSimon import heuristique_simon1
 from progdynamique import prog_dynamique
 
@@ -122,7 +122,7 @@ def heuristique(time) :
             
             """Ici, on peut utiliser n'importe quelle heuristique en remplaçant
             la fonction topsis par une autre heuristique"""
-            machine = Machines_available[prog_dynamique(Machines_available, worker)]
+            machine = Machines_available[topsis(Machines_available, worker)]
             
             #Affectation
             affectation(machine, worker, worker_index, time)
