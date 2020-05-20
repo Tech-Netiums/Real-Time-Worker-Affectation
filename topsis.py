@@ -12,6 +12,9 @@ from parameters import delta, nu
 from objet import Worker, Machine
 
 
+treshold = 0.9
+
+
 def topsis(Machines_available, worker) : 
 # On construit dans un premier temps la matrice A
     A = np.zeros((len(Machines_available),2))
@@ -84,6 +87,24 @@ def topsis(Machines_available, worker) :
             maxS = S[j]
             machine_index = j
     return machine_index
+
+def SPT(Machines_available, worker): 
+    A = [0] * len(Machines_available)
+    for i in range(len(Machines_available)): 
+        machine = Machines_available[i]
+        initial_duration = machine.time_queue[0]
+        exact_duration = initial_duration * ( 1 + delta * (math.log(1 + worker.fatigue) ))
+        A[i]= exact_duration
+    best_machine = A.index(min(A))
+    return best_machine
+        
+
+def loulou(Machines_available, worker) : 
+    if worker.fatigue > treshold : 
+        return SPT(Machines_available, worker)
+    else : 
+         return topsis(Machines_available, worker)
+        
 
 
 

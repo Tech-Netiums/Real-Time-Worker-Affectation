@@ -9,7 +9,7 @@ from termcolor import colored
 import matplotlib.pyplot as plt
 import parameters as param
 from productArrival import product_arrival, product_arrival_n_days
-from topsis import topsis
+from topsis import topsis, SPT, loulou
 from objet import Product, Worker, Machine, Liberation, Product_arrival
 from fatigueMeunier import fatigueMeunier, deuxmachines
 from heuristiqueSimon import heuristique_simon1
@@ -91,7 +91,7 @@ def next_event(Events):
         
         return heuristique(next_event.time)
   
-def randomaffectation(Machines_available, worker) :
+def random_affectation(Machines_available, worker) :
     return random.randrange(0,len(Machines_available),1)
 
 # Affectation selon l'heuristique définie
@@ -146,7 +146,7 @@ def affectation(machine, worker, worker_index, time) :
 #Fonction actualisant le niveau de fatigue après calcul                       
 def update_fatigue(worker,duration, penibility,time):
     fatigue = worker.fatigue
-    new_fatigue_level = fatigue + (1 - fatigue) * (1 - math.exp(-penibility*duration))
+    new_fatigue_level = fatigue + ((1 - fatigue) * (1 - math.exp(-penibility*duration)))/3
     worker.increase_fatigue(new_fatigue_level,time)
         
 #Calcul du mean flowtime
@@ -181,7 +181,7 @@ def plot_fatigue() :
     for i in range(len(Workers)) :
         plt.plot(Workers[i].list_time,Workers[i].list_fatigue, label = "Worker" + str(i+1)) 
         plt.legend()
-        print(Workers[i].list_time,Workers[i].list_fatigue)
+        #print(Workers[i].list_time,Workers[i].list_fatigue)
     plt.xlabel("Time")
     plt.ylabel("Level of fatigue")
 
