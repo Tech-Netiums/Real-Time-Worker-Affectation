@@ -8,12 +8,12 @@ Created on Wed Apr 15 14:13:57 2020
 import math
 import numpy as np
 import random
-from parameters import delta, nu
+from parameters import delta, nu2
 
 
-def topsis(Machines_available, worker) : 
+def topsis2(Machines_available, worker) : 
 # On construit dans un premier temps la matrice A
-    A = np.zeros((len(Machines_available),2))
+    A = np.zeros((len(Machines_available),4))
     for i in range(len(Machines_available)) :
         machine = Machines_available[i]
         #Critère C1 : SPT (positive impact)
@@ -49,7 +49,7 @@ def topsis(Machines_available, worker) :
             norm +=  A[i][j]**2
         norm = math.sqrt(norm)
         for i in range(len(Machines_available)) :
-            V[i][j] = nu[j]*A[i][j]/norm
+            V[i][j] = nu2[j]*A[i][j]/norm
     
     #Détermination de la pire et de la meilleure alternative
     min_C = [V[0][0], V[0][1], V[0][2], V[0][3]]
