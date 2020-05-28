@@ -17,7 +17,7 @@ def createlist(i,j,r,k,fatigue,d,s,t,pi,m,n) :
     #On travaille sur l'indice j
     if k == 0 : 
         for rp in range(r+1) :
-            if fatigue[i][j-1][rp] != None and fatigue[i][j-1][rp] + (1 - fatigue[i][j-1][rp])*(1 - math.exp(-d[1]*t[j-1])) <= r/R :
+            if fatigue[i][j-1][rp] != None and fatigue[i][j-1][rp] + (1 - fatigue[i][j-1][rp])*(1 - math.exp(-d[1]*t[j-1]))/5 <= r/R :
                 L.append(rp)
                 
         if L != [] :
@@ -36,7 +36,7 @@ def createlist(i,j,r,k,fatigue,d,s,t,pi,m,n) :
     #On travaille sur l'indice i
     if k == 1 :
         for rp in range(r+1) :
-            if fatigue[i-1][j][rp] != None and fatigue[i-1][j][rp] + (1 - fatigue[i-1][j][rp])*(1 - math.exp(-d[0]*s[i-1])) <= r/R :
+            if fatigue[i-1][j][rp] != None and fatigue[i-1][j][rp] + (1 - fatigue[i-1][j][rp])*(1 - math.exp(-d[0]*s[i-1]))/5 <= r/R :
                 L.append(rp)
         
         if L != [] :
@@ -55,10 +55,10 @@ def createlist(i,j,r,k,fatigue,d,s,t,pi,m,n) :
 def affectation(i,j,r,k,r_min,pi,former_neighbour,fatigue,m,n,s,t,d) :
     #On travaille sur l'indice j
     if k == 0 :
-        return pi[i][j-1][r_min] + (m+n+1-i-j)*t[j-1]*phi(i,j,r_min,0,fatigue,d),(i,j-1,r_min), fatigue[i][j-1][r_min] + (1 - fatigue[i][j-1][r_min])*(1 - math.exp(-d[1]*t[j-1]))     
+        return pi[i][j-1][r_min] + (m+n+1-i-j)*t[j-1]*phi(i,j,r_min,0,fatigue,d),(i,j-1,r_min), fatigue[i][j-1][r_min] + (1 - fatigue[i][j-1][r_min])*(1 - math.exp(-d[1]*t[j-1]))/5     
     #On travaille sur l'indice i
     if k == 1 :
-        return pi[i-1][j][r_min] + (m+n+1-i-j)*s[i-1]*phi(i,j,r_min,1,fatigue,d), (i-1,j,r_min), fatigue[i-1][j][r_min] + (1 - fatigue[i-1][j][r_min])*(1 - math.exp(-d[0]*s[i-1]))
+        return pi[i-1][j][r_min] + (m+n+1-i-j)*s[i-1]*phi(i,j,r_min,1,fatigue,d), (i-1,j,r_min), fatigue[i-1][j][r_min] + (1 - fatigue[i-1][j][r_min])*(1 - math.exp(-d[0]*s[i-1]))/5
         
 
 def phi(i,j,r,k,fatigue,d) :
@@ -138,10 +138,8 @@ def deuxmachines(Machines_available, worker) :
     
     path.reverse()
     if path[1] == (1,0) :
-        print(0)
         return 0
     else :
-        print(1)
         return 1 
     
 #Modèle avec fatigue pour n machines
@@ -156,7 +154,6 @@ def fatigueMeunier(Machines_available, worker) :
         winners = []
         for i in range(number_of_pairs) :
             nb_duel += 1
-            print(nb_duel)
             duel = [machines[i],machines[i+1]]
             index = deuxmachines(duel,worker)
             winners.append(duel[index])
@@ -170,6 +167,5 @@ def fatigueMeunier(Machines_available, worker) :
         alone_machine = len(machines)%2
     for i in range(len(Machines_available)) : 
         if machines[0] == Machines_available[i] :
-            print(i)
             return i
             

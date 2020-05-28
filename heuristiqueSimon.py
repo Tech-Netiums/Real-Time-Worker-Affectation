@@ -18,7 +18,6 @@ def heuristique_simon1(Machines_available, worker, Workers) :
         other_workers.append(other_workers_machinek)
         
     #2. Pour chaque machine, comparer le niveau de fatigue des workers
-    print(other_workers)
     workers_fatigue =[]
     for k in range(len(Machines_available)) :
         fatigue = []
@@ -27,7 +26,6 @@ def heuristique_simon1(Machines_available, worker, Workers) :
         workers_fatigue.append(fatigue)
         
     #3. On choisit la machine pour lequel le worker est le plus en forme
-    print(workers_fatigue)
     difference_min = workers_fatigue[0][0]
     index_machine = 0
     for k in range(len(Machines_available)) :

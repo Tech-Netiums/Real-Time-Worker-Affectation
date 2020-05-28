@@ -24,17 +24,17 @@ def topsis2(Machines_available, worker) :
         
         #Critère C2 : LNQ (negative impact)
         queue = machine.queue
-        lower_bound_fatigue = worker.fatigue + (1 - worker.fatigue)*(1 - math.exp(-penibility*exact_duration))
+        lower_bound_fatigue = worker.fatigue + (1 - worker.fatigue)*(1 - math.exp(-penibility*exact_duration))/5
         for j in range(len(queue)-1) : 
             initial_duration = machine.time_queue[j+1]
             additional_duration = initial_duration * ( 1 + delta * (math.log(1 + lower_bound_fatigue) ))
             exact_duration += additional_duration
-            lower_bound_fatigue += (1 - lower_bound_fatigue)*(1 - math.exp(-penibility*additional_duration))
+            lower_bound_fatigue += (1 - lower_bound_fatigue)*(1 - math.exp(-penibility*additional_duration))/5
         A[i][1] = exact_duration
         
         #Critère C3: Fatique supplémentaire si affectation, mesure l'impact sur la condition du worker (negative impact)
         exact_duration = initial_duration*(1+delta*penibility*(math.log(1+worker.fatigue)))
-        added_fatigue = 1-math.exp(-penibility*exact_duration)
+        added_fatigue = 1-math.exp(-penibility*exact_duration)/5
         A[i][2] = added_fatigue
 
         #Critère C4: Taux d'augmentation du temps, mesure l'impact de la fatigue déjà accumulée sur la performance (positive impact)

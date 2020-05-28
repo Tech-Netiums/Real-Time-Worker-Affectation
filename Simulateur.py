@@ -5,6 +5,7 @@ Created on Wed Mar 18 22:30:22 2020
 """
 import random 
 import math
+import numpy as np
 from termcolor import colored
 import matplotlib.pyplot as plt
 import parameters as param
@@ -45,7 +46,7 @@ Events = []
 Waiting_workers = []
 
 
-def next_event(Events):
+def next_event(Events,weight):
     next_event = Events.pop(0) # on récupère le prochain évènement
     
     if  isinstance(next_event, Product_arrival): 
@@ -60,7 +61,7 @@ def next_event(Events):
             machine.queue.append(product)
             product.arrivals.append(next_event.time)
             #print( str(next_event.time) + ' : ' + colored('Product ' + str(num_prod), 'green') +  ' arrives at' + colored(' Machine ' + str(num_machine), 'red') )
-            return heuristique(next_event.time)  #on lance l'affectation d'employés
+            return heuristique(next_event.time, weight)  #on lance l'affectation d'employés
         else : 
             machine.queue.append(product)
             product.arrivals.append(next_event.time)
@@ -89,13 +90,13 @@ def next_event(Events):
         Waiting_workers.append(Workers[next_event.worker_num - 1]) #on ajoute le travailleurs à la file de travailleurs libres
         
         
-        return heuristique(next_event.time)
+        return heuristique(next_event.time, weight)
   
 def random_affectation(Machines_available, worker) :
     return random.randrange(0,len(Machines_available),1)
 
 # Affectation selon l'heuristique définie
-def heuristique(time) : 
+def heuristique(time, weight = nu) : 
     worker_index = 0
     copy_waiting_worker = []
     for i in range(len(Waiting_workers)) :
@@ -122,7 +123,7 @@ def heuristique(time) :
             
             """Ici, on peut utiliser n'importe quelle heuristique en remplaçant
             la fonction topsis par une autre heuristique"""
-            machine = Machines_available[topsis(Machines_available, worker)]
+            machine = Machines_available[heuristique_simon1(Machines_available, worker, Workers)]
             
             #Affectation
             affectation(machine, worker, worker_index, time)
@@ -146,7 +147,7 @@ def affectation(machine, worker, worker_index, time) :
 #Fonction actualisant le niveau de fatigue après calcul                       
 def update_fatigue(worker,duration, penibility,time):
     fatigue = worker.fatigue
-    new_fatigue_level = fatigue + ((1 - fatigue) * (1 - math.exp(-penibility*duration)))/3
+    new_fatigue_level = fatigue + ((1 - fatigue) * (1 - math.exp(-penibility*duration)))/5
     worker.increase_fatigue(new_fatigue_level,time)
         
 #Calcul du mean flowtime
@@ -167,10 +168,10 @@ def MFT() :
     return sum_MFT
 
 #Fonction permettant de dépiler les événements    
-def run(Events): 
+def run(Events, weight): 
     time_out = 0
     while len(Events) != 0 :
-        next_event(Events)
+        next_event(Events, weight)
         if len(Events) == 1 :
             time_out = Events[0].time
     return time_out
@@ -189,7 +190,7 @@ def plot_fatigue() :
 
 Waiting_workers = [Workers[i] for i in range(len(Workers))]
 
-def average_day(prod_arrival) : 
+def average_day(prod_arrival, weight) : 
     #Génération de la totalité des arrivées de produits
     for i in range(4) : 
         product_i = prod_arrival[i]
@@ -197,21 +198,21 @@ def average_day(prod_arrival) :
             Events.append(Product_arrival(product_i[j],i+1))
     Events.sort(key=lambda x: x.time) #on trie selon le temps
     #On traite les événements
-    time = run(Events)
+    time = run(Events, weight)
     mft = MFT()
     return mft, time
 
 
 #Simuler n journées de 8h
 
-def simulation_n_days() : 
+def simulation_n_days(weight) : 
     MFTs = []
     average_mft = 0
     variance = 0
     time = 0
     #Calcul de la moyenne 
     for i in range(param.number_of_days) :
-        day_i, time_i= average_day(product_arrival_n_days[i])
+        day_i, time_i= average_day(product_arrival_n_days[i], weight)
         average_mft += day_i
         time += time_i
         MFTs.append(day_i)
@@ -224,7 +225,7 @@ def simulation_n_days() :
             Workers[j].fatigue = 0
         variance += (MFTs[i] - average_mft)**2
     standard_deviation = math.sqrt(variance/param.number_of_days)
-    plot_bar(MFTs,average_mft)
+    #plot_bar(MFTs,average_mft)
     return average_mft,standard_deviation, average_time
 
 def plot_bar(MFTs,average_mft) :
@@ -239,3 +240,15 @@ def plot_bar(MFTs,average_mft) :
     plt.bar(x,freq, width = interval*3/4)   
     plt.xlabel("MFT")
     plt.ylabel("frequency")
+
+nu_1 = np.linspace(0,1,101)
+nu_list = [[nu_1[i],1-nu_1[i]] for i in range(100)]
+
+def best_coeff(nu_list) :
+    nu_opt = nu_list[0]
+    MFT_opt = simulation_n_days(nu_list[0])[0]
+    for i in range(1,len(nu_list)) :
+        if simulation_n_days(nu_list[i])[0] < MFT_opt :
+            MFT_opt = simulation_n_days(nu_list[i])[0]
+            nu_opt = nu_list[i]
+    return nu_opt

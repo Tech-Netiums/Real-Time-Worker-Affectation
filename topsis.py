@@ -8,14 +8,14 @@ Created on Wed Apr 15 14:13:57 2020
 import math
 import numpy as np
 import random
-from parameters import delta, nu
+from parameters import delta
 from objet import Worker, Machine
 
 
 treshold = 0.9
 
 
-def topsis(Machines_available, worker) : 
+def topsis(Machines_available, worker,nu) : 
 # On construit dans un premier temps la matrice A
     A = np.zeros((len(Machines_available),2))
     for i in range(len(Machines_available)) :
@@ -28,12 +28,12 @@ def topsis(Machines_available, worker) :
         
         #Critère C2 : LNQ 
         queue = machine.queue
-        lower_bound_fatigue = worker.fatigue + (1 - worker.fatigue)*(1 - math.exp(-penibility*exact_duration))
+        lower_bound_fatigue = worker.fatigue + (1 - worker.fatigue)*(1 - math.exp(-penibility*exact_duration))/5
         for j in range(len(queue)-1) : 
             initial_duration = machine.time_queue[j+1]
             additional_duration = initial_duration * ( 1 + delta * (math.log(1 + lower_bound_fatigue) ))
             exact_duration += additional_duration
-            lower_bound_fatigue += (1 - lower_bound_fatigue)*(1 - math.exp(-penibility*additional_duration))
+            lower_bound_fatigue += (1 - lower_bound_fatigue)*(1 - math.exp(-penibility*additional_duration))/5
         A[i][1] = exact_duration
         
     # On normalise et on pondère cette matrice 
